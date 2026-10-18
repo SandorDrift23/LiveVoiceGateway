@@ -4,7 +4,13 @@ import os
 import unittest
 from unittest.mock import patch
 
-from live_voice_gateway.config import Settings, backend_prompt, build_instructions
+from live_voice_gateway.config import (
+    Settings,
+    _mcp_url,
+    _voice,
+    backend_prompt,
+    build_instructions,
+)
 from live_voice_gateway.mcp_debug import HomeAssistantClient, _result_text, _tool_names
 from live_voice_gateway.live_session import LIVE_MODEL, LiveEffect, LiveSession
 from live_voice_gateway.protocol import flush_message, loads_hello, phase_message
@@ -118,6 +124,37 @@ class LiveSessionTests(unittest.TestCase):
         self.assertEqual(backend["tools"], [{"type": "function", "name": "intent__HassTurnOn"}])
         self.assertIn("Home Assistant", backend["instructions"])
         self.assertNotIn("web_search", str(backend["tools"]))
+
+    def test_web_search_uses_a_separate_idle_window(self):
+        started = self.session.handle_server_event({
+            "type": "response.event",
+            "event": {"type": "response.web_search_call.in_progress"},
+        })
+        self.assertEqual(self.session.web_searches, 1)
+        self.assertFalse(started.activity)
+        self.session.handle_server_event({
+            "type": "response.event",
+            "event": {"type": "response.web_search_call.searching"},
+        })
+        self.assertEqual(self.session.web_searches, 1)
+        finished = self.session.handle_server_event({
+            "type": "response.event",
+            "event": {"type": "response.web_search_call.completed"},
+        })
+        self.assertEqual(self.session.web_searches, 0)
+        self.assertTrue(finished.activity)
+
+    def test_unfinished_web_search_resets_when_the_backend_finishes(self):
+        self.session.handle_server_event({
+            "type": "response.event",
+            "event": {"type": "response.web_search_call.in_progress"},
+        })
+        done = self.session.handle_server_event({
+            "type": "response.event",
+            "event": {"type": "response.completed"},
+        })
+        self.assertEqual(self.session.web_searches, 0)
+        self.assertTrue(done.activity)
 
     def test_function_result_continues_after_the_backend_finishes(self):
         effect = self.session.handle_server_event({
@@ -244,13 +281,29 @@ class InstructionTests(unittest.TestCase):
                 "OPENAI_API_KEY": "test",
                 "HA_ACCESS_TOKEN": "",
                 "HA_MCP_URL": "",
+                "LANGUAGE": "",
                 "SUPERVISOR_TOKEN": "supervisor-test-token",
+                "TIMEZONE": "",
             },
             clear=True,
         ):
             settings = Settings.from_env()
         self.assertEqual(settings.ha_access_token, "supervisor-test-token")
-        self.assertEqual(settings.ha_mcp_url, "http://supervisor/core/api/mcp")
+        self.assertEqual(settings.ha_mcp_url, "http://supervisor/core/api/mcp/assist")
+        self.assertEqual(settings.web_search_idle_seconds, 45.0)
+        self.assertEqual(settings.language, "en")
+        self.assertEqual(settings.timezone, "Europe/Berlin")
+        self.assertIn("Speak in English.", settings.instructions)
+
+    def test_addon_voice_label_becomes_openai_voice_name(self):
+        self.assertEqual(_voice("vesper - English (British, masculine)"), "vesper")
+        self.assertEqual(_voice(""), "marin")
+
+    def test_home_assistant_mcp_api_selects_supervisor_path(self):
+        self.assertEqual(
+            _mcp_url("assist"), "http://supervisor/core/api/mcp/assist"
+        )
+        self.assertEqual(_mcp_url("all"), "http://supervisor/core/api/mcp")
 
     def test_home_location_is_one_entry(self):
         settings = Settings(
@@ -289,13 +342,19 @@ class InstructionTests(unittest.TestCase):
 
 
 class IdleTests(unittest.TestCase):
-    def _link(self, age, *, playing=False, tools=0, idle=12):
+    def _link(self, age, *, playing=False, tools=0, idle=12, searches=0, search_idle=45):
         link = type("Link", (), {})()
         link.opening = False
         link.tools_in_flight = tools
         link.last_activity = 100.0 - age
-        link.settings = type("Settings", (), {"idle_seconds": idle})()
-        link.session = type("Session", (), {"playing": playing})()
+        link.settings = type(
+            "Settings",
+            (),
+            {"idle_seconds": idle, "web_search_idle_seconds": search_idle},
+        )()
+        link.session = type(
+            "Session", (), {"playing": playing, "web_searches": searches}
+        )()
         return link
 
     def test_silence_closes_after_the_idle_window(self):
@@ -314,6 +373,12 @@ class IdleTests(unittest.TestCase):
 
     def test_a_running_tool_holds_the_session(self):
         self.assertFalse(conversation_is_idle(self._link(30, tools=1), 100.0))
+
+    def test_web_search_uses_its_longer_timeout(self):
+        during_search = self._link(8, idle=6, searches=1, search_idle=45)
+        self.assertFalse(conversation_is_idle(during_search, 100.0))
+        expired_search = self._link(45, idle=6, searches=1, search_idle=45)
+        self.assertTrue(conversation_is_idle(expired_search, 100.0))
 
     def test_lingering_playback_does_not_hold_past_the_idle_window(self):
         link = self._link(12, playing=True)

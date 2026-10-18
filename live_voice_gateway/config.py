@@ -33,11 +33,24 @@ DEFAULT_BACKEND = (
     "result confirms it. Answer from general knowledge when no tool is needed."
 )
 DEFAULT_BACKEND_MODEL = "gpt-5.4-nano"
+DEFAULT_MCP_BASE_URL = "http://supervisor/core/api/mcp"
 
 _SPEEDS = {
     "slow": "Speak at a relaxed pace.",
     "normal": "Speak at a natural conversational pace.",
     "fast": "Speak a little faster than usual, while staying clear.",
+}
+
+_LANGUAGES = {
+    "de": "German",
+    "en": "English",
+    "es": "Spanish",
+    "fr": "French",
+    "hi": "Hindi",
+    "ja": "Japanese",
+    "ko": "Korean",
+    "nl": "Dutch",
+    "pt": "Portuguese",
 }
 
 
@@ -50,13 +63,14 @@ class Settings:
     voice: str = "marin"
     instructions: str = ""
     idle_seconds: float = 12.0
+    web_search_idle_seconds: float = 45.0
     reconnect_grace_seconds: float = 8.0
     assistant_name: str = "Live"
-    language: str = ""
+    language: str = "en"
     expression: str = DEFAULT_EXPRESSION
     speaking_speed: str = "normal"
     home_location: str = ""
-    timezone: str = ""
+    timezone: str = "Europe/Berlin"
     unit_system: str = "metric"
     reply_instructions: str = DEFAULT_REPLY
     smart_home_instructions: str = DEFAULT_SMART_HOME
@@ -67,7 +81,7 @@ class Settings:
     backend_instructions: str = DEFAULT_BACKEND
     web_search_max_sentences: int = 2
     enable_home_assistant: bool = True
-    ha_mcp_url: str = "http://supervisor/core/api/mcp"
+    ha_mcp_url: str = f"{DEFAULT_MCP_BASE_URL}/assist"
     ha_access_token: str = ""
     mcp_tool_allowlist: tuple[str, ...] = ()
     tool_timeout_seconds: float = 20.0
@@ -89,22 +103,25 @@ class Settings:
             live_url=_text("LIVE_URL") or "wss://api.openai.com/v1/live/sessions",
             host=_text("WEBSOCKET_HOST") or "0.0.0.0",
             port=_int("WEBSOCKET_PORT", 8080, minimum=1, maximum=65535),
-            voice=_text("OPENAI_VOICE") or "marin",
+            voice=_voice(_text("OPENAI_VOICE")),
             idle_seconds=_float_alias(
                 ("CONVERSATION_IDLE_TIMEOUT", "IDLE_SECONDS"),
                 12.0,
                 minimum=2.0,
                 maximum=120.0,
             ),
+            web_search_idle_seconds=_float(
+                "WEB_SEARCH_IDLE_TIMEOUT", 45.0, minimum=2.0, maximum=180.0
+            ),
             reconnect_grace_seconds=_float(
                 "RECONNECT_GRACE_SECONDS", 8.0, minimum=1.0, maximum=60.0
             ),
             assistant_name=_text("ASSISTANT_NAME") or "Live",
-            language=_text("LANGUAGE"),
+            language=_text("LANGUAGE") or "en",
             expression=_text("EXPRESSION") or DEFAULT_EXPRESSION,
             speaking_speed=_text("SPEAKING_SPEED") or "normal",
             home_location=_text("HOME_LOCATION"),
-            timezone=_text("TIMEZONE"),
+            timezone=_text("TIMEZONE") or "Europe/Berlin",
             unit_system=_text("UNIT_SYSTEM") or "metric",
             reply_instructions=_text("REPLY_INSTRUCTIONS") or DEFAULT_REPLY,
             smart_home_instructions=_text("SMART_HOME_INSTRUCTIONS") or DEFAULT_SMART_HOME,
@@ -121,7 +138,7 @@ class Settings:
                 "WEB_SEARCH_MAX_SENTENCES", 2, minimum=1, maximum=5
             ),
             enable_home_assistant=_bool("ENABLE_HOME_ASSISTANT", True),
-            ha_mcp_url=_text("HA_MCP_URL") or "http://supervisor/core/api/mcp",
+            ha_mcp_url=_text("HA_MCP_URL") or _mcp_url(_text("HA_MCP_API")),
             ha_access_token=(
                 _text("HA_ACCESS_TOKEN") or _text("SUPERVISOR_TOKEN")
             ),
@@ -142,7 +159,8 @@ def build_instructions(settings: Settings, *, home_tools: bool = False) -> str:
     """Join the preference fields into the single prompt gpt-live-1 accepts."""
     lines = [f"You are {settings.assistant_name}, a voice assistant."]
     if settings.language:
-        lines.append(f"Speak in {settings.language}.")
+        language = _LANGUAGES.get(settings.language.lower(), settings.language)
+        lines.append(f"Speak in {language}.")
     if settings.expression:
         lines.append(f"Expression: {settings.expression}")
     speed = settings.speaking_speed.strip().lower()
@@ -200,6 +218,18 @@ def backend_prompt(settings: Settings) -> str:
 
 def _text(name: str) -> str:
     return os.environ.get(name, "").strip()
+
+
+def _voice(value: str) -> str:
+    """Accept a descriptive add-on label while sending only the API name."""
+    return value.split(maxsplit=1)[0] if value else "marin"
+
+
+def _mcp_url(api: str) -> str:
+    """Select the Supervisor MCP endpoint exposed by Home Assistant."""
+    if api.strip().lower() == "all":
+        return DEFAULT_MCP_BASE_URL
+    return f"{DEFAULT_MCP_BASE_URL}/assist"
 
 
 def _csv(name: str) -> tuple[str, ...]:

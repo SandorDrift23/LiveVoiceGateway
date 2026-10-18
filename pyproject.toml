@@ -1,6 +1,6 @@
 [project]
 name = "live-voice-gateway"
-version = "0.1.0"
+version = "0.2.0"
 description = "Full-duplex WebSocket gateway from a voice device to OpenAI gpt-live-1"
 requires-python = ">=3.11"
 dependencies = [

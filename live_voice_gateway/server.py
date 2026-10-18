@@ -213,7 +213,7 @@ def counts_as_activity(effect) -> bool:
     gpt-live-1 can keep sending audio frames after the spoken words are over.
     Counting those frames reset the idle clock, so a quiet room never timed out.
     """
-    return bool(effect.transcript or effect.tool)
+    return bool(effect.transcript or effect.tool or effect.activity)
 
 
 def conversation_is_idle(link: LiveLink, now: float) -> bool:
@@ -221,7 +221,9 @@ def conversation_is_idle(link: LiveLink, now: float) -> bool:
 
     The clock starts at the last transcript or tool result. A reply that is
     still marked as playing only holds the session for the first second, so
-    leftover audio frames cannot keep the Live connection open.
+    leftover audio frames cannot keep the Live connection open. An open web
+    search uses its own, longer timeout and restarts the normal clock when it
+    finishes, so the spoken result is not cut off.
     """
     if link.opening or link.session is None or link.tools_in_flight:
         return False
@@ -230,7 +232,10 @@ def conversation_is_idle(link: LiveLink, now: float) -> bool:
         return False
     if link.session.playing:
         link.session.playing = False
-    return quiet >= link.settings.idle_seconds
+    limit = link.settings.idle_seconds
+    if link.session.web_searches:
+        limit = max(limit, link.settings.web_search_idle_seconds)
+    return quiet >= limit
 
 
 async def _apply(link: LiveLink, effect) -> None:

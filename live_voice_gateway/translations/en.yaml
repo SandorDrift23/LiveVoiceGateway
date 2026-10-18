@@ -7,22 +7,28 @@ configuration:
     description: The name the assistant uses for itself; this does not change its voice.
   language:
     name: Language
-    description: Language the assistant should speak. Leave empty for automatic selection.
+    description: >-
+      Language code the assistant should speak, for example en, de, fr, or
+      nl. Default is en.
   openai_voice:
     name: Voice
     description: >-
-      GPT-Live voice. The list includes regional English voices and voices
-      designed for German, French, Portuguese, Hindi, Japanese, and Korean.
-      A new conversation is required after changing it.
+      Each option shows its intended language and, when documented, regional
+      influence and presentation. The language field still controls what the
+      assistant speaks. A new conversation is required after changing it.
   expression:
     name: Expression
-    description: The assistant's tone, warmth, and speaking character.
+    description: >-
+      The assistant's tone, warmth, and speaking character. Example: Warm,
+      friendly, calm, and natural, with clear pronunciation.
   home_location:
     name: Home location
     description: City or general location used for local questions such as weather.
   timezone:
     name: Timezone
-    description: Timezone used when answering time and date questions.
+    description: >-
+      IANA timezone used for time and date questions. Default and example:
+      Europe/Berlin. Other examples are Europe/London and America/New_York.
   reply_instructions:
     name: Reply instructions
     description: >-
@@ -45,6 +51,12 @@ configuration:
     description: >-
       Seconds without microphone activity, playback, or tool work before the
       GPT-Live conversation closes. Default 12.
+  web_search_idle_timeout:
+    name: Web search idle timeout
+    description: >-
+      Seconds the conversation stays open while a web search is running.
+      This replaces Conversation idle timeout until the search finishes, so a
+      short conversation timeout does not stop the session first. Default 45.
   enable_web_search:
     name: Enable web search
     description: Allows current information to be retrieved through an additional OpenAI call.
@@ -65,20 +77,32 @@ configuration:
     name: Advanced · Device reconnect grace
     description: Seconds to preserve a conversation while the voice device reconnects.
   enable_home_assistant:
-    name: Advanced · Enable Home Assistant
-    description: Exposes Home Assistant MCP tools to the voice session. Default is enabled.
-  ha_mcp_url:
-    name: Advanced · Home Assistant MCP URL
+    name: Home Assistant control
     description: >-
-      Default: leave empty when running on Home Assistant. The add-on uses
-      http://supervisor/core/api/mcp automatically. Set a URL only when the
-      gateway runs outside Home Assistant.
+      Exposes Home Assistant MCP tools to the voice session. Enable the Model
+      Context Protocol Server integration under Settings → Devices & services
+      before starting this add-on. Default is enabled.
+  ha_mcp_api:
+    name: Home Assistant MCP tool set
+    description: >-
+      Assist tools only is the recommended default and uses /api/mcp/assist.
+      It controls only entities exposed to Assist. All configured APIs uses
+      /api/mcp, requires the MCP integration to expose those APIs, and normally
+      requires administrator authorization.
+  ha_mcp_url:
+    name: Advanced · Custom Home Assistant MCP URL
+    description: >-
+      Leave empty in this add-on. The selected MCP tool set automatically uses
+      the corresponding Supervisor URL. Set the complete URL, without a
+      trailing slash, only when the gateway runs outside Home Assistant; this
+      override takes precedence over the dropdown.
   ha_access_token:
     name: Advanced · Home Assistant access token
     description: >-
       Default: leave empty when running on Home Assistant. The add-on uses its
       supervisor token automatically. Set a long-lived access token only when
-      the gateway runs on another computer.
+      the gateway runs on another computer. A 401 response means the supplied
+      token is missing or not authorized.
   mcp_tool_allowlist:
     name: Advanced · MCP tool allow-list
     description: Comma-separated tool names. Leave empty to allow every advertised MCP tool.

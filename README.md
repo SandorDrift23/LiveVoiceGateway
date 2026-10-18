@@ -40,13 +40,17 @@ internal speaker.
    `ws://<home-assistant-ip>:8080/`.
 
 The main configuration page contains identity, voice, expression, instructions,
-location, web search, and **Conversation idle timeout**. Enable Home
+location, web search, **Conversation idle timeout**, and **Web search idle
+timeout**. Enable Home
 Assistant's **Show unused optional configuration options** control for speaking
 speed, units, MCP overrides, backend settings, and logging.
 
-Leave the MCP URL and access token empty when running as a Home Assistant
-add-on. It automatically uses `http://supervisor/core/api/mcp` and the
-Supervisor token. The MCP Server integration still needs to be enabled.
+Leave the custom MCP URL and access token empty when running as a Home
+Assistant add-on. It automatically uses the Supervisor token. The default
+**Assist tools only** selection connects to
+`http://supervisor/core/api/mcp/assist`; **All configured APIs** uses
+`http://supervisor/core/api/mcp`. The MCP Server integration must be enabled,
+with Home Assistant control and the intended entities exposed.
 
 See the add-on [documentation](live_voice_gateway/DOCS.md) for configuration
 details.

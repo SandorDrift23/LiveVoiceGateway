@@ -38,6 +38,7 @@ class LiveEffect:
     log: str = ""
     transcript: bool = False
     tool: bool = False
+    activity: bool = False
     tool_calls: tuple[ToolCall, ...] = ()
     outbound: tuple[dict, ...] = field(default_factory=tuple)
 
@@ -71,6 +72,7 @@ class LiveSession:
         self._sent: set[str] = set()
         self._round_finished = False
         self._continued = False
+        self.web_searches = 0
 
     def start_event(self) -> dict:
         event = {
@@ -224,14 +226,30 @@ class LiveSession:
                 log=f"tool call: {call.name} {call.arguments}",
             )
         if kind == "response.completed":
+            searching = self.web_searches > 0
+            self.web_searches = 0
             self._round_finished = True
             return LiveEffect(
                 log=f"backend: {kind}",
                 outbound=tuple(self._continuation()),
+                activity=searching,
             )
-        if "search" in kind:
-            return LiveEffect(log=f"web search: {kind}")
+        if "web_search" in kind:
+            return self._web_search_event(kind)
         return LiveEffect()
+
+    def _web_search_event(self, kind: str) -> LiveEffect:
+        """Hold the conversation for every search in the current backend round."""
+        if kind.endswith(".in_progress"):
+            self.web_searches += 1
+            return LiveEffect(log=f"web search: {kind}")
+        if kind.endswith((".completed", ".failed", ".cancelled", ".incomplete")):
+            self.web_searches = max(0, self.web_searches - 1)
+            return LiveEffect(
+                log=f"web search: {kind}",
+                activity=self.web_searches == 0,
+            )
+        return LiveEffect(log=f"web search: {kind}")
 
     def _continuation(self) -> list[dict]:
         if self._continued or not self._round_finished or not self._calls:

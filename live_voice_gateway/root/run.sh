@@ -20,6 +20,7 @@ export WEB_SEARCH_INSTRUCTIONS="$(bashio::config 'web_search_instructions')"
 export EXTRA_INSTRUCTIONS="$(bashio::config 'extra_instructions')"
 export BACKEND_INSTRUCTIONS="$(bashio::config 'backend_instructions')"
 export CONVERSATION_IDLE_TIMEOUT="$(bashio::config 'conversation_idle_timeout')"
+export WEB_SEARCH_IDLE_TIMEOUT="$(bashio::config 'web_search_idle_timeout')"
 export ENABLE_WEB_SEARCH="$(bashio::config 'enable_web_search')"
 
 export_if_set() {
@@ -36,6 +37,7 @@ export_if_set 'backend_model' 'BACKEND_MODEL'
 export_if_set 'web_search_max_sentences' 'WEB_SEARCH_MAX_SENTENCES'
 export_if_set 'reconnect_grace_seconds' 'RECONNECT_GRACE_SECONDS'
 export_if_set 'enable_home_assistant' 'ENABLE_HOME_ASSISTANT'
+export_if_set 'ha_mcp_api' 'HA_MCP_API'
 export_if_set 'ha_mcp_url' 'HA_MCP_URL'
 export_if_set 'mcp_tool_allowlist' 'MCP_TOOL_ALLOWLIST'
 export_if_set 'mcp_request_timeout' 'MCP_REQUEST_TIMEOUT'

@@ -7,6 +7,8 @@ requests use Home Assistant's official MCP Server integration.
 ## Before starting
 
 1. Enable the **Model Context Protocol Server** integration in Home Assistant.
+   Enable **Control Home Assistant** and expose the entities that the voice
+   assistant should be allowed to control.
 2. Enter an OpenAI API key with API billing enabled.
 3. Install the companion firmware from
    [LiveVoiceFirmware](https://github.com/SandorDrift23/LiveVoiceFirmware).
@@ -19,18 +21,26 @@ audio protocol.
 ## Configuration
 
 The normal page contains the voice, identity, expression, instructions,
-location, and conversation idle timeout. Home Assistant renders instruction
-fields on one line; use **Configuration → ⋮ → Edit in YAML** when editing long
-text.
+location, conversation idle timeout, web-search idle timeout, and the standard
+runtime defaults. Voice options show their intended language and regional
+influence. A web search uses the longer timeout, then the normal conversation
+timeout starts again when the search finishes. Home Assistant renders
+instruction fields on one line; use **Configuration → ⋮ → Edit in YAML** when
+editing long text.
 
 Enable **Show unused optional configuration options** to reveal advanced
 settings such as speaking speed, units, backend model, MCP overrides, network
 port, and logging.
 
-When the add-on runs inside Home Assistant, leave **Home Assistant MCP URL**
-and **Home Assistant access token** empty. The add-on automatically uses the
-Supervisor MCP address and its Supervisor token. Only fill them when running
-the Python gateway on another computer.
+**Assist tools only** is the recommended MCP default. It selects
+`/api/mcp/assist` and limits control to entities exposed to Assist. **All
+configured APIs** selects `/api/mcp` and requires the corresponding MCP Server
+configuration and administrator authorization.
+
+When the add-on runs inside Home Assistant, leave **Custom Home Assistant MCP
+URL** and **Home Assistant access token** empty. The add-on derives the
+Supervisor endpoint from the dropdown and uses its Supervisor token. Only fill
+those overrides when running the Python gateway on another computer.
 
 Changing the voice takes effect when a new GPT-Live conversation starts.
 

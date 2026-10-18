@@ -1,5 +1,5 @@
 name: Live Voice Gateway
-version: "0.1.0"
+version: "0.2.0"
 slug: live_voice_gateway
 description: Full-duplex GPT-Live voice gateway for Home Assistant Voice PE
 url: https://github.com/SandorDrift23/LiveVoiceGateway
@@ -18,11 +18,11 @@ homeassistant_api: true
 options:
   openai_api_key: ""
   assistant_name: Live
-  language: ""
-  openai_voice: marin
+  language: en
+  openai_voice: "marin - English (recommended)"
   expression: Warm, friendly, and natural.
   home_location: ""
-  timezone: ""
+  timezone: Europe/Berlin
   reply_instructions: >-
     Keep answers short and natural. Usually use one or two sentences. Do not
     use markdown, URLs, or entity IDs.
@@ -41,37 +41,51 @@ options:
     result says. Do not claim a device changed unless the tool result confirms
     it. Answer from general knowledge when no tool is needed.
   conversation_idle_timeout: 12
+  web_search_idle_timeout: 45
   enable_web_search: true
+  speaking_speed: normal
+  unit_system: metric
+  backend_model: gpt-5.4-nano
+  web_search_max_sentences: 2
+  reconnect_grace_seconds: 8
+  enable_home_assistant: true
+  ha_mcp_api: assist
+  mcp_request_timeout: 20
+  websocket_port: 8080
+  log_transcripts: true
+  log_tool_calls: true
 
 schema:
   # Main configuration
   openai_api_key: password
   assistant_name: str
-  language: str?
-  openai_voice: "list(marin|cedar|alloy|ash|ballad|beacon|bossa|brise|cinder|coral|delta|echo|flitz|gleam|harema|juni|meridian|nira|noeul|nuri|quartz|ripple|sage|shida|shimmer|sillage|stone|tempo|verse|vesper|willow)"
+  language: str
+  openai_voice: "list(marin - English (recommended)|cedar - English (recommended)|alloy - English|ash - English|ballad - English|coral - English|echo - English|sage - English|shimmer - English|verse - English|quartz - English (Australian, feminine)|ripple - English (Australian, masculine)|vesper - English (British, masculine)|willow - English (Irish, feminine)|stone - English (Irish, masculine)|gleam - English (North American, feminine)|meridian - English (North American, masculine)|beacon - English (Filipino, masculine)|delta - English (Southern US, feminine)|cinder - English (Southern US, masculine)|bossa - Portuguese (Brazilian, feminine)|tempo - Portuguese (Brazilian, masculine)|nuri - German (feminine)|juni - German (feminine)|flitz - German (masculine)|brise - French (feminine)|sillage - French (masculine)|nira - Hindi (feminine)|harema - Japanese (feminine)|shida - Japanese (masculine)|noeul - Korean (feminine))"
   expression: str
   home_location: str?
-  timezone: str?
+  timezone: str
   reply_instructions: str
   smart_home_instructions: str
   web_search_instructions: str
   extra_instructions: str?
   backend_instructions: str
   conversation_idle_timeout: "float(2,120)"
+  web_search_idle_timeout: "float(2,180)"
   enable_web_search: bool
+  speaking_speed: "list(slow|normal|fast)"
+  unit_system: "list(metric|us)"
+  backend_model: str
+  web_search_max_sentences: "int(1,5)"
+  reconnect_grace_seconds: "float(1,60)"
+  enable_home_assistant: bool
+  ha_mcp_api: "list(assist|all)"
 
-  # Advanced configuration
-  speaking_speed: "list(slow|normal|fast)?"
-  unit_system: "list(metric|us)?"
-  backend_model: str?
-  web_search_max_sentences: "int(1,5)?"
-  reconnect_grace_seconds: "float(1,60)?"
-  enable_home_assistant: bool?
+  # Optional overrides
   ha_mcp_url: str?
   ha_access_token: password?
   mcp_tool_allowlist: str?
-  mcp_request_timeout: "float(1,120)?"
+  mcp_request_timeout: "float(1,120)"
   live_url: str?
-  websocket_port: "int(1,65535)?"
-  log_transcripts: bool?
-  log_tool_calls: bool?
+  websocket_port: "int(1,65535)"
+  log_transcripts: bool
+  log_tool_calls: bool
