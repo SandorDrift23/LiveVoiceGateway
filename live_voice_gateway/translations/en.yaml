@@ -68,8 +68,11 @@ configuration:
     name: Advanced · Unit system
     description: Metric or US customary units. Default is metric.
   backend_model:
-    name: Advanced · Backend model
-    description: Responses model used to select web-search and Home Assistant tools.
+    name: Backend model
+    description: >-
+      Budget model that selects web-search and Home Assistant tools. The list
+      runs from low budget to the minimum-cost model. gpt-5.4-nano is the
+      recommended balance.
   web_search_max_sentences:
     name: Advanced · Maximum web-search sentences
     description: Limits a spoken web-search result. Default is 2.

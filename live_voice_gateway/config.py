@@ -103,7 +103,7 @@ class Settings:
             live_url=_text("LIVE_URL") or "wss://api.openai.com/v1/live/sessions",
             host=_text("WEBSOCKET_HOST") or "0.0.0.0",
             port=_int("WEBSOCKET_PORT", 8080, minimum=1, maximum=65535),
-            voice=_voice(_text("OPENAI_VOICE")),
+            voice=_api_name(_text("OPENAI_VOICE"), "marin"),
             idle_seconds=_float_alias(
                 ("CONVERSATION_IDLE_TIMEOUT", "IDLE_SECONDS"),
                 12.0,
@@ -128,10 +128,9 @@ class Settings:
             web_search_instructions=_text("WEB_SEARCH_INSTRUCTIONS") or DEFAULT_WEB_SEARCH,
             extra_instructions=extra or legacy,
             enable_web_search=_bool("ENABLE_WEB_SEARCH", True),
-            backend_model=(
-                _text("BACKEND_MODEL")
-                or _text("WEB_SEARCH_MODEL")
-                or DEFAULT_BACKEND_MODEL
+            backend_model=_api_name(
+                _text("BACKEND_MODEL") or _text("WEB_SEARCH_MODEL"),
+                DEFAULT_BACKEND_MODEL,
             ),
             backend_instructions=_text("BACKEND_INSTRUCTIONS") or DEFAULT_BACKEND,
             web_search_max_sentences=_int(
@@ -222,7 +221,12 @@ def _text(name: str) -> str:
 
 def _voice(value: str) -> str:
     """Accept a descriptive add-on label while sending only the API name."""
-    return value.split(maxsplit=1)[0] if value else "marin"
+    return _api_name(value, "marin")
+
+
+def _api_name(value: str, default: str) -> str:
+    """Keep the API identifier from a dropdown label such as 'name - detail'."""
+    return value.split(maxsplit=1)[0] if value else default
 
 
 def _mcp_url(api: str) -> str:

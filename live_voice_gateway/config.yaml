@@ -1,5 +1,5 @@
 name: Live Voice Gateway
-version: "0.2.0"
+version: "0.2.1"
 slug: live_voice_gateway
 description: Full-duplex GPT-Live voice gateway for Home Assistant Voice PE
 url: https://github.com/SandorDrift23/LiveVoiceGateway
@@ -45,7 +45,7 @@ options:
   enable_web_search: true
   speaking_speed: normal
   unit_system: metric
-  backend_model: gpt-5.4-nano
+  backend_model: "gpt-5.4-nano - lower budget (recommended)"
   web_search_max_sentences: 2
   reconnect_grace_seconds: 8
   enable_home_assistant: true
@@ -74,7 +74,7 @@ schema:
   enable_web_search: bool
   speaking_speed: "list(slow|normal|fast)"
   unit_system: "list(metric|us)"
-  backend_model: str
+  backend_model: "list(gpt-5.4-mini - low budget|gpt-5-mini - lower budget|gpt-5.4-nano - lower budget (recommended)|gpt-5-nano - minimum budget)"
   web_search_max_sentences: "int(1,5)"
   reconnect_grace_seconds: "float(1,60)"
   enable_home_assistant: bool

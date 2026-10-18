@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 from live_voice_gateway.config import (
     Settings,
+    _api_name,
     _mcp_url,
     _voice,
     backend_prompt,
@@ -298,6 +299,10 @@ class InstructionTests(unittest.TestCase):
     def test_addon_voice_label_becomes_openai_voice_name(self):
         self.assertEqual(_voice("vesper - English (British, masculine)"), "vesper")
         self.assertEqual(_voice(""), "marin")
+        self.assertEqual(
+            _api_name("gpt-5-nano - minimum budget", "gpt-5.4-nano"),
+            "gpt-5-nano",
+        )
 
     def test_home_assistant_mcp_api_selects_supervisor_path(self):
         self.assertEqual(
