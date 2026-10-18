@@ -1,0 +1,77 @@
+name: Live Voice Gateway
+version: "0.1.0"
+slug: live_voice_gateway
+description: Full-duplex GPT-Live voice gateway for Home Assistant Voice PE
+url: https://github.com/SandorDrift23/LiveVoiceGateway
+arch:
+  - aarch64
+  - amd64
+init: false
+startup: application
+boot: auto
+host_network: true
+homeassistant_api: true
+
+# Fields with values here are shown on the normal configuration page.
+# Optional schema-only fields appear when the user enables
+# "Show unused optional configuration options".
+options:
+  openai_api_key: ""
+  assistant_name: Live
+  language: ""
+  openai_voice: marin
+  expression: Warm, friendly, and natural.
+  home_location: ""
+  timezone: ""
+  reply_instructions: >-
+    Keep answers short and natural. Usually use one or two sentences. Do not
+    use markdown, URLs, or entity IDs.
+  smart_home_instructions: >-
+    Carry out a clear smart-home request immediately. If the device or room is
+    ambiguous, ask one short question.
+  web_search_instructions: >-
+    Use web search only for current facts such as weather, news, opening hours,
+    and prices. Do not search for a smart-home request or for something you can
+    answer directly. Speak the result. Do not pretend to look something up.
+  extra_instructions: ""
+  backend_instructions: >-
+    Use web search only when the answer depends on current external
+    information. Never use web search for a smart-home request. For a device
+    request, call one Home Assistant function and return only what that tool
+    result says. Do not claim a device changed unless the tool result confirms
+    it. Answer from general knowledge when no tool is needed.
+  conversation_idle_timeout: 12
+  enable_web_search: true
+
+schema:
+  # Main configuration
+  openai_api_key: password
+  assistant_name: str
+  language: str?
+  openai_voice: "list(marin|cedar|alloy|ash|ballad|beacon|bossa|brise|cinder|coral|delta|echo|flitz|gleam|harema|juni|meridian|nira|noeul|nuri|quartz|ripple|sage|shida|shimmer|sillage|stone|tempo|verse|vesper|willow)"
+  expression: str
+  home_location: str?
+  timezone: str?
+  reply_instructions: str
+  smart_home_instructions: str
+  web_search_instructions: str
+  extra_instructions: str?
+  backend_instructions: str
+  conversation_idle_timeout: "float(2,120)"
+  enable_web_search: bool
+
+  # Advanced configuration
+  speaking_speed: "list(slow|normal|fast)?"
+  unit_system: "list(metric|us)?"
+  backend_model: str?
+  web_search_max_sentences: "int(1,5)?"
+  reconnect_grace_seconds: "float(1,60)?"
+  enable_home_assistant: bool?
+  ha_mcp_url: str?
+  ha_access_token: password?
+  mcp_tool_allowlist: str?
+  mcp_request_timeout: "float(1,120)?"
+  live_url: str?
+  websocket_port: "int(1,65535)?"
+  log_transcripts: bool?
+  log_tool_calls: bool?

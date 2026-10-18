@@ -1,0 +1,19 @@
+[project]
+name = "live-voice-gateway"
+version = "0.1.0"
+description = "Full-duplex WebSocket gateway from a voice device to OpenAI gpt-live-1"
+requires-python = ">=3.11"
+dependencies = [
+  "python-dotenv>=1.0.0",
+  "websockets>=13.0",
+]
+
+[project.scripts]
+live-voice-gateway = "live_voice_gateway.__main__:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["live_voice_gateway*"]
