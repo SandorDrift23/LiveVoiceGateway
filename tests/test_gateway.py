@@ -283,6 +283,8 @@ class InstructionTests(unittest.TestCase):
                 "HA_ACCESS_TOKEN": "",
                 "HA_MCP_URL": "",
                 "LANGUAGE": "",
+                "ASSISTANT_NAME": "",
+                "OPENAI_VOICE": "",
                 "SUPERVISOR_TOKEN": "supervisor-test-token",
                 "TIMEZONE": "",
             },
@@ -292,9 +294,11 @@ class InstructionTests(unittest.TestCase):
         self.assertEqual(settings.ha_access_token, "supervisor-test-token")
         self.assertEqual(settings.ha_mcp_url, "http://supervisor/core/api/mcp/assist")
         self.assertEqual(settings.web_search_idle_seconds, 45.0)
-        self.assertEqual(settings.language, "en")
+        self.assertEqual(settings.language, "de")
+        self.assertEqual(settings.assistant_name, "Nabu")
+        self.assertEqual(settings.voice, "juni")
         self.assertEqual(settings.timezone, "Europe/Berlin")
-        self.assertIn("Speak in English.", settings.instructions)
+        self.assertIn("Speak in German.", settings.instructions)
 
     def test_addon_voice_label_becomes_openai_voice_name(self):
         self.assertEqual(_voice("vesper - English (British, masculine)"), "vesper")

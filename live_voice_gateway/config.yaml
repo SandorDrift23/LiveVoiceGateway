@@ -39,9 +39,9 @@ options:
       current external facts such as weather, news, opening hours, and prices.
       Never use web search for a device request or for an answer you already know.
   basic:
-    assistant_name: Live
-    language: en
-    openai_voice: "marin - English (recommended)"
+    assistant_name: Nabu
+    language: de
+    openai_voice: "juni - German (feminine)"
     expression: Warm, friendly, and natural.
     home_location: ""
     timezone: Europe/Berlin

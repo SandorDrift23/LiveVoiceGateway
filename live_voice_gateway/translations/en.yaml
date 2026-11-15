@@ -43,7 +43,7 @@ configuration:
         name: Language
         description: >-
           Language code the assistant should speak, for example en, de, fr, or
-          nl. Default is en.
+          nl. Default is de.
       openai_voice:
         name: Voice
         description: >-

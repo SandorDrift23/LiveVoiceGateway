@@ -103,7 +103,7 @@ class Settings:
             live_url=_text("LIVE_URL") or "wss://api.openai.com/v1/live/sessions",
             host=_text("WEBSOCKET_HOST") or "0.0.0.0",
             port=_int("WEBSOCKET_PORT", 8080, minimum=1, maximum=65535),
-            voice=_api_name(_text("OPENAI_VOICE"), "marin"),
+            voice=_api_name(_text("OPENAI_VOICE"), "juni"),
             idle_seconds=_float_alias(
                 ("CONVERSATION_IDLE_TIMEOUT", "IDLE_SECONDS"),
                 12.0,
@@ -116,8 +116,8 @@ class Settings:
             reconnect_grace_seconds=_float(
                 "RECONNECT_GRACE_SECONDS", 8.0, minimum=1.0, maximum=60.0
             ),
-            assistant_name=_text("ASSISTANT_NAME") or "Live",
-            language=_text("LANGUAGE") or "en",
+            assistant_name=_text("ASSISTANT_NAME") or "Nabu",
+            language=_text("LANGUAGE") or "de",
             expression=_text("EXPRESSION") or DEFAULT_EXPRESSION,
             speaking_speed=_text("SPEAKING_SPEED") or "normal",
             home_location=_text("HOME_LOCATION"),
