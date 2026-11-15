@@ -21,7 +21,7 @@ audio protocol.
 ## Configuration
 
 The configuration page is grouped into **Instructions**, **Basic settings**,
-**Web search and backend**, and **Home Assistant and device**. Home Assistant
+**Backend and web search**, and **Home Assistant and device**. Home Assistant
 shows each group as its own section, which can be opened and closed. Voice
 options show their intended language and regional influence. A web search uses
 the longer timeout, then the normal conversation timeout starts again when the
