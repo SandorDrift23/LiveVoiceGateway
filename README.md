@@ -39,11 +39,10 @@ internal speaker.
 5. Install the companion firmware and set its gateway URL to
    `ws://<home-assistant-ip>:8080/`.
 
-The main configuration page contains identity, voice, expression, instructions,
-location, web search, **Conversation idle timeout**, and **Web search idle
-timeout**. Enable Home
-Assistant's **Show unused optional configuration options** control for speaking
-speed, units, MCP overrides, backend settings, and logging.
+The configuration page is grouped into **Instructions**, **Basic settings**,
+**Web search and backend**, and **Home Assistant and device**. Each group is
+its own section. Instruction fields remain single-line; use
+**Configuration → ⋮ → Edit in YAML** for long text.
 
 Leave the custom MCP URL and access token empty when running as a Home
 Assistant add-on. It automatically uses the Supervisor token. The default

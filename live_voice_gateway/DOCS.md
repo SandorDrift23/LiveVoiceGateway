@@ -20,17 +20,22 @@ audio protocol.
 
 ## Configuration
 
-The normal page contains the voice, identity, expression, instructions,
-location, conversation idle timeout, web-search idle timeout, and the standard
-runtime defaults. Voice options show their intended language and regional
-influence. A web search uses the longer timeout, then the normal conversation
-timeout starts again when the search finishes. Home Assistant renders
-instruction fields on one line; use **Configuration → ⋮ → Edit in YAML** when
-editing long text.
+The configuration page is grouped into **Instructions**, **Basic settings**,
+**Web search and backend**, and **Home Assistant and device**. Home Assistant
+shows each group as its own section, which can be opened and closed. Voice
+options show their intended language and regional influence. A web search uses
+the longer timeout, then the normal conversation timeout starts again when the
+search finishes.
 
-Enable **Show unused optional configuration options** to reveal advanced
-settings such as speaking speed, units, backend model, MCP overrides, network
-port, and logging.
+Instruction fields are still single-line. Use **Configuration → ⋮ → Edit in
+YAML** when editing long text. An update from the older flat configuration
+keeps the saved values and files them into these sections the first time the
+add-on starts.
+
+The custom MCP URL, access token, tool allow-list, and GPT-Live URL have no
+default. Leave them empty when the add-on runs inside Home Assistant. If a
+field is not on the page, enable **Show unused optional configuration
+options**.
 
 **Assist tools only** is the recommended MCP default. It selects
 `/api/mcp/assist` and limits control to entities exposed to Assist. **All
