@@ -2,125 +2,146 @@ configuration:
   openai_api_key:
     name: OpenAI API key
     description: Your OpenAI API key. Make sure API billing is enabled.
-  assistant_name:
-    name: Assistant name
-    description: The name the assistant uses for itself; this does not change its voice.
-  language:
-    name: Language
+  instructions:
+    name: Instructions
     description: >-
-      Language code the assistant should speak, for example en, de, fr, or
-      nl. Default is en.
-  openai_voice:
-    name: Voice
+      Rules for spoken replies, smart-home requests, web search, and the
+      backend that calls tools. These boxes are single-line. For a longer
+      text, use the Configuration page menu and select Edit in YAML.
+    fields:
+      reply_instructions:
+        name: Reply instructions
+        description: Rules for normal spoken replies.
+      smart_home_instructions:
+        name: Smart-home instructions
+        description: Rules for Home Assistant device and room requests.
+      web_search_instructions:
+        name: Web-search instructions
+        description: Rules that determine when and how web search should be used.
+      extra_instructions:
+        name: Extra instructions
+        description: Optional additional behavior that is appended to the voice prompt.
+      backend_instructions:
+        name: Backend and tool instructions
+        description: Rules for selecting web search and Home Assistant tools.
+  basic:
+    name: Basic settings
+    description: Name, voice, location, and how long a conversation stays open.
+    fields:
+      assistant_name:
+        name: Assistant name
+        description: The name the assistant uses for itself; this does not change its voice.
+      language:
+        name: Language
+        description: >-
+          Language code the assistant should speak, for example en, de, fr, or
+          nl. Default is en.
+      openai_voice:
+        name: Voice
+        description: >-
+          Each option shows its intended language and, when documented, regional
+          influence and presentation. The language field still controls what the
+          assistant speaks. A new conversation is required after changing it.
+      expression:
+        name: Expression
+        description: >-
+          The assistant's tone, warmth, and speaking character. Example: Warm,
+          friendly, calm, and natural, with clear pronunciation.
+      home_location:
+        name: Home location
+        description: City or general location used for local questions such as weather.
+      timezone:
+        name: Timezone
+        description: >-
+          IANA timezone used for time and date questions. Default and example:
+          Europe/Berlin. Other examples are Europe/London and America/New_York.
+      speaking_speed:
+        name: Speaking speed
+        description: Slow, normal, or fast. Default is normal.
+      unit_system:
+        name: Unit system
+        description: Metric or US customary units. Default is metric.
+      conversation_idle_timeout:
+        name: Conversation idle timeout
+        description: >-
+          Seconds without a transcript or tool result before the GPT-Live
+          conversation closes. Default 12. A shorter value costs less on
+          one-off device commands.
+      reconnect_grace_seconds:
+        name: Device reconnect grace
+        description: Seconds to preserve a conversation while the voice device reconnects.
+  web_search:
+    name: Web search and backend
     description: >-
-      Each option shows its intended language and, when documented, regional
-      influence and presentation. The language field still controls what the
-      assistant speaks. A new conversation is required after changing it.
-  expression:
-    name: Expression
+      Current-information lookup and the model that selects Home Assistant
+      tools. A web search uses the longer timeout, then the normal conversation
+      timeout starts again when the search finishes.
+    fields:
+      enable_web_search:
+        name: Enable web search
+        description: Allows current information to be retrieved through an additional OpenAI call.
+      web_search_idle_timeout:
+        name: Web search idle timeout
+        description: >-
+          Seconds the conversation stays open while a web search is running.
+          This replaces Conversation idle timeout until the search finishes, so a
+          short conversation timeout does not stop the session first. Default 45.
+      backend_model:
+        name: Backend model
+        description: >-
+          Budget model that selects web-search and Home Assistant tools. The list
+          runs from low budget to the minimum-cost model. gpt-5.4-nano is the
+          recommended balance.
+      web_search_max_sentences:
+        name: Maximum web-search sentences
+        description: Limits a spoken web-search result. Default is 2.
+      live_url:
+        name: GPT-Live URL
+        description: Leave empty to use OpenAI's default GPT-Live WebSocket endpoint.
+  home_assistant:
+    name: Home Assistant and device
     description: >-
-      The assistant's tone, warmth, and speaking character. Example: Warm,
-      friendly, calm, and natural, with clear pronunciation.
-  home_location:
-    name: Home location
-    description: City or general location used for local questions such as weather.
-  timezone:
-    name: Timezone
-    description: >-
-      IANA timezone used for time and date questions. Default and example:
-      Europe/Berlin. Other examples are Europe/London and America/New_York.
-  reply_instructions:
-    name: Reply instructions
-    description: >-
-      Rules for normal spoken replies. For easier editing of long text, use
-      the Configuration page menu and select Edit in YAML.
-  smart_home_instructions:
-    name: Smart-home instructions
-    description: Rules for Home Assistant device and room requests.
-  web_search_instructions:
-    name: Web-search instructions
-    description: Rules that determine when and how web search should be used.
-  extra_instructions:
-    name: Extra instructions
-    description: Optional additional behavior that is appended to the voice prompt.
-  backend_instructions:
-    name: Backend and tool instructions
-    description: Rules for selecting web search and Home Assistant tools.
-  conversation_idle_timeout:
-    name: Conversation idle timeout
-    description: >-
-      Seconds without microphone activity, playback, or tool work before the
-      GPT-Live conversation closes. Default 12.
-  web_search_idle_timeout:
-    name: Web search idle timeout
-    description: >-
-      Seconds the conversation stays open while a web search is running.
-      This replaces Conversation idle timeout until the search finishes, so a
-      short conversation timeout does not stop the session first. Default 45.
-  enable_web_search:
-    name: Enable web search
-    description: Allows current information to be retrieved through an additional OpenAI call.
-
-  speaking_speed:
-    name: Advanced · Speaking speed
-    description: Slow, normal, or fast. Default is normal.
-  unit_system:
-    name: Advanced · Unit system
-    description: Metric or US customary units. Default is metric.
-  backend_model:
-    name: Backend model
-    description: >-
-      Budget model that selects web-search and Home Assistant tools. The list
-      runs from low budget to the minimum-cost model. gpt-5.4-nano is the
-      recommended balance.
-  web_search_max_sentences:
-    name: Advanced · Maximum web-search sentences
-    description: Limits a spoken web-search result. Default is 2.
-  reconnect_grace_seconds:
-    name: Advanced · Device reconnect grace
-    description: Seconds to preserve a conversation while the voice device reconnects.
-  enable_home_assistant:
-    name: Home Assistant control
-    description: >-
-      Exposes Home Assistant MCP tools to the voice session. Enable the Model
-      Context Protocol Server integration under Settings → Devices & services
-      before starting this add-on. Default is enabled.
-  ha_mcp_api:
-    name: Home Assistant MCP tool set
-    description: >-
-      Assist tools only is the recommended default and uses /api/mcp/assist.
-      It controls only entities exposed to Assist. All configured APIs uses
-      /api/mcp, requires the MCP integration to expose those APIs, and normally
-      requires administrator authorization.
-  ha_mcp_url:
-    name: Advanced · Custom Home Assistant MCP URL
-    description: >-
-      Leave empty in this add-on. The selected MCP tool set automatically uses
-      the corresponding Supervisor URL. Set the complete URL, without a
-      trailing slash, only when the gateway runs outside Home Assistant; this
-      override takes precedence over the dropdown.
-  ha_access_token:
-    name: Advanced · Home Assistant access token
-    description: >-
-      Default: leave empty when running on Home Assistant. The add-on uses its
-      supervisor token automatically. Set a long-lived access token only when
-      the gateway runs on another computer. A 401 response means the supplied
-      token is missing or not authorized.
-  mcp_tool_allowlist:
-    name: Advanced · MCP tool allow-list
-    description: Comma-separated tool names. Leave empty to allow every advertised MCP tool.
-  mcp_request_timeout:
-    name: Advanced · MCP request timeout
-    description: Seconds allowed for one Home Assistant MCP request. Default is 20.
-  live_url:
-    name: Advanced · GPT-Live URL
-    description: Leave empty to use OpenAI's default GPT-Live WebSocket endpoint.
-  websocket_port:
-    name: Advanced · Device WebSocket port
-    description: Port used by the Voice PE or ReSpeaker. Default is 8080.
-  log_transcripts:
-    name: Advanced · Log transcripts
-    description: Writes spoken user and assistant text to the add-on log. Default is enabled.
-  log_tool_calls:
-    name: Advanced · Log tool calls
-    description: Writes Home Assistant and web-search tool activity to the log. Default is enabled.
+      Home Assistant MCP tools, the device WebSocket, and add-on logging.
+    fields:
+      enable_home_assistant:
+        name: Home Assistant control
+        description: >-
+          Exposes Home Assistant MCP tools to the voice session. Enable the Model
+          Context Protocol Server integration under Settings → Devices & services
+          before starting this add-on. Default is enabled.
+      ha_mcp_api:
+        name: Home Assistant MCP tool set
+        description: >-
+          Assist tools only is the recommended default and uses /api/mcp/assist.
+          It controls only entities exposed to Assist. All configured APIs uses
+          /api/mcp, requires the MCP integration to expose those APIs, and normally
+          requires administrator authorization.
+      mcp_request_timeout:
+        name: MCP request timeout
+        description: Seconds allowed for one Home Assistant MCP request. Default is 20.
+      ha_mcp_url:
+        name: Custom Home Assistant MCP URL
+        description: >-
+          Leave empty in this add-on. The selected MCP tool set automatically uses
+          the corresponding Supervisor URL. Set the complete URL, without a
+          trailing slash, only when the gateway runs outside Home Assistant; this
+          override takes precedence over the dropdown.
+      ha_access_token:
+        name: Home Assistant access token
+        description: >-
+          Default: leave empty when running on Home Assistant. The add-on uses its
+          supervisor token automatically. Set a long-lived access token only when
+          the gateway runs on another computer. A 401 response means the supplied
+          token is missing or not authorized.
+      mcp_tool_allowlist:
+        name: MCP tool allow-list
+        description: Comma-separated tool names. Leave empty to allow every advertised MCP tool.
+      websocket_port:
+        name: Device WebSocket port
+        description: Port used by the Voice PE or ReSpeaker. Default is 8080.
+      log_transcripts:
+        name: Log transcripts
+        description: Writes spoken user and assistant text to the add-on log. Default is enabled.
+      log_tool_calls:
+        name: Log tool calls
+        description: Writes Home Assistant and web-search tool activity to the log. Default is enabled.
