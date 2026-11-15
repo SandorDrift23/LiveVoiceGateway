@@ -16,21 +16,21 @@ DEFAULT_REPLY = (
     "Do not use markdown, URLs, or entity IDs."
 )
 DEFAULT_SMART_HOME = (
-    "Carry out a clear smart-home request immediately. If the device or room "
-    "is ambiguous, ask one short question."
+    "Hand a device request to the backend as soon as it is clear. Do not ask "
+    "which device they mean before the backend answers. If the result lists "
+    "several matches, ask one short question."
 )
 DEFAULT_WEB_SEARCH = (
-    "Use web search only for current facts such as weather, news, opening "
-    "hours, and prices. Do not search for a smart-home request or for "
-    "something you can answer directly. Speak the result. Do not pretend "
-    "to look something up."
+    "Ask the backend for current facts such as weather, news, opening hours, "
+    "and prices. If you already know the answer, say it directly. Speak the "
+    "backend's result. Do not pretend to look something up."
 )
 DEFAULT_BACKEND = (
-    "Use web search only when the answer depends on current external "
-    "information. Never use web search for a smart-home request. For a "
-    "device request, call one Home Assistant function and return only what "
-    "that tool result says. Do not claim a device changed unless the tool "
-    "result confirms it. Answer from general knowledge when no tool is needed."
+    "For a device request, call one Home Assistant function. Pass only the "
+    "device name the user said, unchanged and untranslated, and do not add a "
+    "room. Return only what that tool result says. Use web search only for "
+    "current external facts such as weather, news, opening hours, and prices. "
+    "Never use web search for a device request or for an answer you already know."
 )
 DEFAULT_BACKEND_MODEL = "gpt-5.4-nano"
 DEFAULT_MCP_BASE_URL = "http://supervisor/core/api/mcp"
@@ -60,13 +60,13 @@ class Settings:
     live_url: str = "wss://api.openai.com/v1/live/sessions"
     host: str = "0.0.0.0"
     port: int = 8080
-    voice: str = "marin"
+    voice: str = "juni"
     instructions: str = ""
     idle_seconds: float = 12.0
     web_search_idle_seconds: float = 45.0
     reconnect_grace_seconds: float = 8.0
-    assistant_name: str = "Live"
-    language: str = "en"
+    assistant_name: str = "Nabu"
+    language: str = "de"
     expression: str = DEFAULT_EXPRESSION
     speaking_speed: str = "normal"
     home_location: str = ""
@@ -181,8 +181,7 @@ def build_instructions(settings: Settings, *, home_tools: bool = False) -> str:
         lines.append(settings.smart_home_instructions)
         if home_tools:
             lines.append(
-                "Delegate a smart-home request to the backend tools. Speak a "
-                "device change only after the tool result confirms it."
+                "Say a device changed only after the tool result confirms it."
             )
         else:
             lines.append(

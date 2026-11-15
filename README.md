@@ -40,7 +40,7 @@ internal speaker.
    `ws://<home-assistant-ip>:8080/`.
 
 The configuration page is grouped into **Instructions**, **Basic settings**,
-**Web search and backend**, and **Home Assistant and device**. Each group is
+**Backend and web search**, and **Home Assistant and device**. Each group is
 its own section. Instruction fields remain single-line; use
 **Configuration → ⋮ → Edit in YAML** for long text.
 

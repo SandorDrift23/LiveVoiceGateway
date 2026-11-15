@@ -5,25 +5,33 @@ configuration:
   instructions:
     name: Instructions
     description: >-
-      Rules for spoken replies, smart-home requests, web search, and the
-      backend that calls tools. These boxes are single-line. For a longer
-      text, use the Configuration page menu and select Edit in YAML.
+      The boxes above Tool instructions are read by the voice model, which
+      speaks and decides when to hand work off. Tool instructions are read only
+      by the model that calls Home Assistant and web search. These boxes are
+      single-line. For a longer text, use the Configuration page menu and
+      select Edit in YAML.
     fields:
       reply_instructions:
         name: Reply instructions
-        description: Rules for normal spoken replies.
+        description: How the voice model phrases a normal spoken reply.
       smart_home_instructions:
         name: Smart-home instructions
-        description: Rules for Home Assistant device and room requests.
+        description: >-
+          When the voice model hands a device request to the tool model. It
+          does not call Home Assistant itself.
       web_search_instructions:
         name: Web-search instructions
-        description: Rules that determine when and how web search should be used.
+        description: >-
+          When the voice model asks the tool model for a current fact. It does
+          not run the search itself.
       extra_instructions:
         name: Extra instructions
-        description: Optional additional behavior that is appended to the voice prompt.
+        description: Optional additional behavior appended to the voice prompt.
       backend_instructions:
-        name: Backend and tool instructions
-        description: Rules for selecting web search and Home Assistant tools.
+        name: Tool instructions
+        description: >-
+          Which Home Assistant function to call, how to pass the device name,
+          and when a web search is allowed. The voice model does not read this.
   basic:
     name: Basic settings
     description: Name, voice, location, and how long a conversation stays open.
@@ -71,7 +79,7 @@ configuration:
         name: Device reconnect grace
         description: Seconds to preserve a conversation while the voice device reconnects.
   web_search:
-    name: Web search and backend
+    name: Backend and web search
     description: >-
       Current-information lookup and the model that selects Home Assistant
       tools. A web search uses the longer timeout, then the normal conversation
