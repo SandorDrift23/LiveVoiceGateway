@@ -21,11 +21,11 @@ audio protocol.
 ## Configuration
 
 The configuration page is grouped into **Instructions**, **Basic settings**,
-**Backend and web search**, and **Home Assistant and device**. Home Assistant
-shows each group as its own section, which can be opened and closed. Voice
-options show their intended language and regional influence. A web search uses
-the longer timeout, then the normal conversation timeout starts again when the
-search finishes.
+**Backend and web search**, **Home Assistant and device**, and **Music
+Assistant**. Home Assistant shows each group as its own section, which can be
+opened and closed. Voice options show their intended language and regional
+influence. A web search uses the longer timeout, then the normal conversation
+timeout starts again when the search finishes.
 
 Instruction fields are still single-line. Use **Configuration → ⋮ → Edit in
 YAML** when editing long text. An update from the older flat configuration
@@ -46,6 +46,14 @@ When the add-on runs inside Home Assistant, leave **Custom Home Assistant MCP
 URL** and **Home Assistant access token** empty. The add-on derives the
 Supervisor endpoint from the dropdown and uses its Supervisor token. Only fill
 those overrides when running the Python gateway on another computer.
+
+Music Assistant is a separate MCP server. Enable the FastMCP Server plugin,
+create a token in its connect wizard, and turn on playback control for that
+token. Leave destructive confirmation off, because this gateway cannot answer
+a confirmation prompt. Enable **Music Assistant control** and paste the token.
+**Default media player** is optional; set a player name such as `Wohnzimmer`
+when requests that name no player should use one. Leave **Music Assistant MCP
+URL** empty to use `http://127.0.0.1:8095/mcp/v1`.
 
 Changing the voice takes effect when a new GPT-Live conversation starts.
 

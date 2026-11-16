@@ -12,7 +12,14 @@ from live_voice_gateway.config import (
     backend_prompt,
     build_instructions,
 )
-from live_voice_gateway.mcp_debug import HomeAssistantClient, _result_text, _tool_names
+from live_voice_gateway.mcp_debug import (
+    HomeAssistantClient,
+    MusicAssistantClient,
+    ToolRouter,
+    _player_index,
+    _result_text,
+    _tool_names,
+)
 from live_voice_gateway.live_session import LIVE_MODEL, LiveEffect, LiveSession
 from live_voice_gateway.protocol import flush_message, loads_hello, phase_message
 from live_voice_gateway.resample import resample_pcm16
@@ -273,6 +280,76 @@ class McpDebugTests(unittest.TestCase):
         )
         self.assertEqual(_tool_names(body), ["HassTurnOn", "HassTurnOff"])
 
+    def test_default_player_is_used_only_when_the_request_names_none(self):
+        client = MusicAssistantClient(
+            "http://ma/mcp/v1", "token", 5, default_player="Wohnzimmer"
+        )
+        client._resolved_default = "id-wohnzimmer"
+        client._players = {"wohnzimmer": "id-wohnzimmer", "küche": "id-kueche"}
+        client._tools = [
+            {
+                "name": "playback_play",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {"player_id": {"type": "string"}, "query": {"type": "string"}},
+                },
+            },
+            {
+                "name": "library_search",
+                "inputSchema": {"type": "object", "properties": {"query": {"type": "string"}}},
+            },
+        ]
+        self.assertEqual(
+            client._prepare_payload("playback_play", {"query": "jazz"})["player_id"],
+            "id-wohnzimmer",
+        )
+        self.assertEqual(
+            client._prepare_payload("playback_play", {"player_id": "Küche"})["player_id"],
+            "id-kueche",
+        )
+        self.assertEqual(
+            client._prepare_payload("playback_play", {"player_id": "Balkon"})["player_id"],
+            "Balkon",
+        )
+        self.assertNotIn("player_id", client._prepare_payload("library_search", {"query": "jazz"}))
+
+    def test_nested_music_call_receives_the_default_player(self):
+        client = MusicAssistantClient("http://ma/mcp/v1", "token", 5, default_player="Wohnzimmer")
+        client._resolved_default = "id-wohnzimmer"
+        client._tools = [
+            {"name": "call_tool", "inputSchema": {"type": "object", "properties": {"name": {}, "arguments": {}}}}
+        ]
+        payload = client._prepare_payload(
+            "call_tool", {"name": "playback_play", "arguments": {"query": "jazz"}}
+        )
+        self.assertEqual(payload["arguments"]["player_id"], "id-wohnzimmer")
+
+    def test_player_list_maps_names_to_ids(self):
+        found = _player_index(
+            '[{"name":"Wohnzimmer","player_id":"id-wohnzimmer"},'
+            '{"name":"Album","id":"album-1"}]'
+        )
+        self.assertEqual(found["wohnzimmer"], "id-wohnzimmer")
+        self.assertNotIn("album", found)
+
+    def test_router_keeps_each_tool_on_its_client(self):
+        home = HomeAssistantClient("http://ha/api/mcp", "token", 5)
+        music = MusicAssistantClient("http://ma/mcp/v1", "token", 5)
+        home._tools = [{"name": "HassTurnOn", "inputSchema": {"type": "object"}}]
+        music._tools = [{"name": "HassTurnOn", "inputSchema": {"type": "object"}}]
+        router = ToolRouter([home, music])
+        names = [tool["name"] for tool in router.function_tools()]
+        self.assertEqual(names, ["HassTurnOn", "music_assistant__HassTurnOn"])
+        music.called = None
+
+        def record(name, arguments):
+            music.called = (name, arguments)
+            return "ok"
+
+        music.call_tool = record
+        self.assertEqual(router.call_tool("music_assistant__HassTurnOn", "{}"), "ok")
+        self.assertEqual(music.called, ("HassTurnOn", "{}"))
+
 
 class InstructionTests(unittest.TestCase):
     def test_home_assistant_addon_uses_supervisor_token(self):
@@ -323,6 +400,7 @@ class InstructionTests(unittest.TestCase):
         )
         text = build_instructions(settings)
         self.assertIn("Berlin, example street 1, 52.52, 13.40", text)
+        self.assertIn("Never use it as a Home Assistant area", text)
         self.assertIn("Speak in German.", text)
         self.assertIn("relaxed pace", text)
         self.assertIn("Never claim a light", text)
@@ -342,6 +420,36 @@ class InstructionTests(unittest.TestCase):
         self.assertNotIn("web search", text.lower())
         self.assertNotIn("smart-home", text.lower())
         self.assertNotIn("home location", text.lower())
+
+    def test_backend_names_a_room_only_when_the_user_does(self):
+        text = backend_prompt(Settings(openai_api_key="test"))
+        self.assertIn("Do not call GetLiveContext", text)
+        self.assertIn("Set area only when the user names a room", text)
+        self.assertIn("Never set area or the device name from the home city", text)
+        self.assertIn("die Lampe am Sofa", text)
+
+    def test_music_assistant_uses_localhost_and_its_own_token(self):
+        with patch.dict(
+            os.environ,
+            {
+                "OPENAI_API_KEY": "test",
+                "HA_ACCESS_TOKEN": "",
+                "SUPERVISOR_TOKEN": "supervisor-test-token",
+                "ENABLE_MUSIC_ASSISTANT": "true",
+                "MA_ACCESS_TOKEN": "music-token",
+                "DEFAULT_MEDIA_PLAYER": "Wohnzimmer",
+                "MA_MCP_URL": "http://127.0.0.1:8095/mcp/v1/",
+            },
+            clear=True,
+        ):
+            settings = Settings.from_env()
+        self.assertEqual(settings.ma_mcp_url, "http://127.0.0.1:8095/mcp/v1")
+        self.assertEqual(settings.ma_access_token, "music-token")
+        self.assertEqual(settings.ha_access_token, "supervisor-test-token")
+        self.assertEqual(settings.default_media_player, "Wohnzimmer")
+        self.assertIn("default player (Wohnzimmer)", backend_prompt(settings))
+        voice = build_instructions(settings, music_tools=True)
+        self.assertIn("The default player is Wohnzimmer", voice)
 
     def test_disabled_web_search_tells_the_backend_not_to_search(self):
         settings = Settings(openai_api_key="test", enable_web_search=False)

@@ -1,5 +1,5 @@
 name: Live Voice Gateway
-version: "0.2.2"
+version: "0.2.3"
 slug: live_voice_gateway
 description: Full-duplex GPT-Live voice gateway for Home Assistant Voice PE
 url: https://github.com/SandorDrift23/LiveVoiceGateway
@@ -24,20 +24,28 @@ options:
       Keep answers short and natural. Usually use one or two sentences. Do not
       use markdown, URLs, or entity IDs.
     smart_home_instructions: >-
-      Hand a device request to the backend as soon as it is clear. Do not ask
-      which device they mean before the backend answers. If the result lists
-      several matches, ask one short question.
+      Hand a device request to the backend as soon as it is clear. Forward the
+      user's words without adding or removing a room, place, or device name.
+      Do not ask which device they mean before the backend answers. If the
+      result lists several matches, ask one short question.
     web_search_instructions: >-
       Ask the backend for current facts such as weather, news, opening hours,
       and prices. If you already know the answer, say it directly. Speak the
       backend's result. Do not pretend to look something up.
     extra_instructions: ""
     backend_instructions: >-
-      For a device request, call one Home Assistant function. Pass only the
-      device name the user said, unchanged and untranslated, and do not add a
-      room. Return only what that tool result says. Use web search only for
-      current external facts such as weather, news, opening hours, and prices.
-      Never use web search for a device request or for an answer you already know.
+      For a device request, call the one control function that performs the
+      action, in the same step. Do not call GetLiveContext or any lookup first.
+      Drop German articles (der, die, das, den, dem, des, ein, eine, einen) and
+      the verb. Do not translate the remaining name. Set area only when the
+      user names a room, such as 'im Schlafzimmer', and pass that room
+      unchanged. Never set area or the device name from the home city,
+      timezone, or weather location. If the user describes a kind of device at
+      a spot, such as 'die Lampe am Sofa', pass the spot as the device name and
+      the kind as the domain. If several devices match, return that list and
+      do not guess. Use web search only for current external facts such as
+      weather, news, opening hours, and prices. Never use web search for a
+      device request or for an answer you already know.
   basic:
     assistant_name: Nabu
     language: de
@@ -61,6 +69,9 @@ options:
     websocket_port: 8080
     log_transcripts: true
     log_tool_calls: true
+  music_assistant:
+    enable_music_assistant: false
+    default_media_player: ""
 
 schema:
   openai_api_key: password
@@ -97,3 +108,9 @@ schema:
     websocket_port: "int(1,65535)"
     log_transcripts: bool
     log_tool_calls: bool
+  music_assistant:
+    enable_music_assistant: bool
+    ma_mcp_url: str?
+    ma_access_token: password?
+    default_media_player: str?
+    ma_tool_allowlist: str?

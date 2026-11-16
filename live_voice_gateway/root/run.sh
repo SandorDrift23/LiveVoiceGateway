@@ -53,6 +53,11 @@ MCP_TOOL_ALLOWLIST="$(read_optional 'home_assistant.mcp_tool_allowlist' 'mcp_too
 WEBSOCKET_PORT="$(read_pref 'home_assistant.websocket_port' 'websocket_port')"
 LOG_TRANSCRIPTS="$(read_pref 'home_assistant.log_transcripts' 'log_transcripts')"
 LOG_TOOL_CALLS="$(read_pref 'home_assistant.log_tool_calls' 'log_tool_calls')"
+ENABLE_MUSIC_ASSISTANT="$(read_optional 'music_assistant.enable_music_assistant' 'enable_music_assistant')"
+MA_MCP_URL="$(read_optional 'music_assistant.ma_mcp_url' 'ma_mcp_url')"
+MA_ACCESS_TOKEN="$(read_optional 'music_assistant.ma_access_token' 'ma_access_token')"
+DEFAULT_MEDIA_PLAYER="$(read_optional 'music_assistant.default_media_player' 'default_media_player')"
+MA_TOOL_ALLOWLIST="$(read_optional 'music_assistant.ma_tool_allowlist' 'ma_tool_allowlist')"
 
 # File the previous flat options into the sections so the page shows the
 # values this process is about to use. A failure here does not block startup.
@@ -203,6 +208,8 @@ export_value MCP_REQUEST_TIMEOUT "${MCP_REQUEST_TIMEOUT}"
 export_value WEBSOCKET_PORT "${WEBSOCKET_PORT}"
 export_value LOG_TRANSCRIPTS "${LOG_TRANSCRIPTS}"
 export_value LOG_TOOL_CALLS "${LOG_TOOL_CALLS}"
+export_value ENABLE_MUSIC_ASSISTANT "${ENABLE_MUSIC_ASSISTANT}"
+export_value DEFAULT_MEDIA_PLAYER "${DEFAULT_MEDIA_PLAYER}"
 
 export_if_present() {
     local environment_name="$1"
@@ -215,6 +222,9 @@ export_if_present() {
 export_if_present LIVE_URL "${LIVE_URL}"
 export_if_present HA_MCP_URL "${HA_MCP_URL}"
 export_if_present MCP_TOOL_ALLOWLIST "${MCP_TOOL_ALLOWLIST}"
+export_if_present MA_MCP_URL "${MA_MCP_URL}"
+export_if_present MA_ACCESS_TOKEN "${MA_ACCESS_TOKEN}"
+export_if_present MA_TOOL_ALLOWLIST "${MA_TOOL_ALLOWLIST}"
 
 if [ -n "${HA_ACCESS_TOKEN}" ] && [ "${HA_ACCESS_TOKEN}" != "null" ]; then
     export HA_ACCESS_TOKEN

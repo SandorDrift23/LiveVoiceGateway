@@ -16,9 +16,10 @@ DEFAULT_REPLY = (
     "Do not use markdown, URLs, or entity IDs."
 )
 DEFAULT_SMART_HOME = (
-    "Hand a device request to the backend as soon as it is clear. Do not ask "
-    "which device they mean before the backend answers. If the result lists "
-    "several matches, ask one short question."
+    "Hand a device request to the backend as soon as it is clear. Forward the "
+    "user's words without adding or removing a room, place, or device name. "
+    "Do not ask which device they mean before the backend answers. If the "
+    "result lists several matches, ask one short question."
 )
 DEFAULT_WEB_SEARCH = (
     "Ask the backend for current facts such as weather, news, opening hours, "
@@ -26,14 +27,22 @@ DEFAULT_WEB_SEARCH = (
     "backend's result. Do not pretend to look something up."
 )
 DEFAULT_BACKEND = (
-    "For a device request, call one Home Assistant function. Pass only the "
-    "device name the user said, unchanged and untranslated, and do not add a "
-    "room. Return only what that tool result says. Use web search only for "
-    "current external facts such as weather, news, opening hours, and prices. "
-    "Never use web search for a device request or for an answer you already know."
+    "For a device request, call the one control function that performs the "
+    "action, in the same step. Do not call GetLiveContext or any lookup first. "
+    "Drop German articles (der, die, das, den, dem, des, ein, eine, einen) and "
+    "the verb. Do not translate the remaining name. Set area only when the "
+    "user names a room, such as 'im Schlafzimmer', and pass that room "
+    "unchanged. Never set area or the device name from the home city, "
+    "timezone, or weather location. If the user describes a kind of device at "
+    "a spot, such as 'die Lampe am Sofa', pass the spot as the device name and "
+    "the kind as the domain. If several devices match, return that list and "
+    "do not guess. Use web search only for current external facts such as "
+    "weather, news, opening hours, and prices. Never use web search for a "
+    "device request or for an answer you already know."
 )
 DEFAULT_BACKEND_MODEL = "gpt-5.4-nano"
 DEFAULT_MCP_BASE_URL = "http://supervisor/core/api/mcp"
+DEFAULT_MA_MCP_URL = "http://127.0.0.1:8095/mcp/v1"
 
 _SPEEDS = {
     "slow": "Speak at a relaxed pace.",
@@ -85,6 +94,11 @@ class Settings:
     ha_access_token: str = ""
     mcp_tool_allowlist: tuple[str, ...] = ()
     tool_timeout_seconds: float = 20.0
+    enable_music_assistant: bool = False
+    ma_mcp_url: str = DEFAULT_MA_MCP_URL
+    ma_access_token: str = ""
+    default_media_player: str = ""
+    ma_tool_allowlist: tuple[str, ...] = ()
     log_transcripts: bool = True
     log_tool_calls: bool = True
 
@@ -137,7 +151,7 @@ class Settings:
                 "WEB_SEARCH_MAX_SENTENCES", 2, minimum=1, maximum=5
             ),
             enable_home_assistant=_bool("ENABLE_HOME_ASSISTANT", True),
-            ha_mcp_url=_text("HA_MCP_URL") or _mcp_url(_text("HA_MCP_API")),
+            ha_mcp_url=_url(_text("HA_MCP_URL") or _mcp_url(_text("HA_MCP_API"))),
             ha_access_token=(
                 _text("HA_ACCESS_TOKEN") or _text("SUPERVISOR_TOKEN")
             ),
@@ -148,13 +162,20 @@ class Settings:
                 minimum=1.0,
                 maximum=120.0,
             ),
+            enable_music_assistant=_bool("ENABLE_MUSIC_ASSISTANT", False),
+            ma_mcp_url=_url(_text("MA_MCP_URL") or DEFAULT_MA_MCP_URL),
+            ma_access_token=_text("MA_ACCESS_TOKEN"),
+            default_media_player=_text("DEFAULT_MEDIA_PLAYER"),
+            ma_tool_allowlist=_csv("MA_TOOL_ALLOWLIST"),
             log_transcripts=_bool("LOG_TRANSCRIPTS", True),
             log_tool_calls=_bool("LOG_TOOL_CALLS", True),
         )
         return cls(**{**settings.__dict__, "instructions": build_instructions(settings)})
 
 
-def build_instructions(settings: Settings, *, home_tools: bool = False) -> str:
+def build_instructions(
+    settings: Settings, *, home_tools: bool = False, music_tools: bool = False
+) -> str:
     """Join the preference fields into the single prompt gpt-live-1 accepts."""
     lines = [f"You are {settings.assistant_name}, a voice assistant."]
     if settings.language:
@@ -167,9 +188,10 @@ def build_instructions(settings: Settings, *, home_tools: bool = False) -> str:
     if settings.home_location:
         lines.append(
             "The user's home location is: "
-            f"{settings.home_location}. Use it for local questions such as "
-            "weather and nearby places. Do not repeat the full location unless "
-            "the user asks."
+            f"{settings.home_location}. Use it only for local questions such as "
+            "weather and nearby places. Never use it as a Home Assistant area, "
+            "room, or device name. Do not repeat the full location unless the "
+            "user asks."
         )
     if settings.timezone:
         lines.append(f"Timezone: {settings.timezone}.")
@@ -188,6 +210,25 @@ def build_instructions(settings: Settings, *, home_tools: bool = False) -> str:
                 "Home Assistant tools are not connected. If asked to control a "
                 "device, say that you cannot do that yet. Never claim a light, "
                 "switch, or other device changed."
+            )
+    if settings.enable_music_assistant:
+        player = settings.default_media_player
+        if music_tools and player:
+            lines.append(
+                "Hand a music or playback request to the backend immediately. "
+                f"The default player is {player}. Do not ask which player "
+                "unless the result lists several matches."
+            )
+        elif music_tools:
+            lines.append(
+                "Hand a music or playback request to the backend immediately. "
+                "No default player is configured. If the user names no player, "
+                "ask which one."
+            )
+        else:
+            lines.append(
+                "Music Assistant is not connected. If asked to play music, say "
+                "that you cannot do that yet."
             )
     if settings.enable_web_search and settings.web_search_instructions:
         lines.append(settings.web_search_instructions)
@@ -211,6 +252,17 @@ def backend_prompt(settings: Settings) -> str:
             "Web search is disabled. Do not call it. Use Home Assistant "
             "functions for device requests."
         )
+    if settings.enable_music_assistant:
+        player = settings.default_media_player or "none"
+        lines.append(
+            "For music, radio, a playlist, an artist, pause, next, previous, "
+            "stop, or volume, call one Music Assistant function in the same "
+            "step. Do not use a Home Assistant turn-on tool or web search. "
+            f"Leave player fields empty to use the default player ({player}). "
+            "If the user names a player or room, pass that name unchanged and "
+            "do not substitute the default. Do not translate titles, artists, "
+            "or playlists. Return a short confirmation without ids or JSON."
+        )
     return " ".join(lines)
 
 
@@ -233,6 +285,10 @@ def _mcp_url(api: str) -> str:
     if api.strip().lower() == "all":
         return DEFAULT_MCP_BASE_URL
     return f"{DEFAULT_MCP_BASE_URL}/assist"
+
+
+def _url(value: str) -> str:
+    return value.strip().rstrip("/")
 
 
 def _csv(name: str) -> tuple[str, ...]:

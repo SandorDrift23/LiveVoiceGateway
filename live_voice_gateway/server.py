@@ -9,7 +9,7 @@ import websockets
 
 from live_voice_gateway.config import Settings, backend_prompt, build_instructions
 from live_voice_gateway.live_session import LIVE_RATE, LiveSession
-from live_voice_gateway.mcp_debug import HomeAssistantClient
+from live_voice_gateway.mcp_debug import ToolRouter
 from live_voice_gateway.protocol import (
     flush_message,
     loads_hello,
@@ -63,7 +63,7 @@ class LiveLink:
         self.last_activity = time.monotonic()
         self.tools_in_flight = 0
         self.parked_at: float | None = None
-        self.home: HomeAssistantClient | None = None
+        self.home: ToolRouter | None = None
         self.tool_lock = asyncio.Lock()
         self.live_send_lock = asyncio.Lock()
         # Microphone audio is continuous. Keep only a short queue so a slow
@@ -337,7 +337,7 @@ async def _run_tool(link: LiveLink, generation: int, call) -> None:
         try:
             output = await asyncio.to_thread(home.call_tool, call.name, call.arguments)
         except Exception as exc:
-            output = f"Home Assistant call failed: {exc}"
+            output = f"Tool call failed: {exc}"
     finally:
         link.tools_in_flight -= 1
         link.last_activity = time.monotonic()
@@ -383,10 +383,10 @@ async def _expire_parked(ip: str, link: LiveLink) -> None:
 class DeviceConnection:
     """One device socket. An OpenAI session can outlive that socket briefly."""
 
-    def __init__(self, socket, settings: Settings, home: HomeAssistantClient | None = None):
+    def __init__(self, socket, settings: Settings, tools: ToolRouter | None = None):
         self._socket = socket
         self._settings = settings
-        self._home = home
+        self._tools = tools
         self._device: dict | None = None
         self._link: LiveLink | None = None
         self._send_lock = asyncio.Lock()
@@ -474,18 +474,24 @@ class DeviceConnection:
             self._link = None
         link = LiveLink(self._socket, self._device, self._settings)
         self._link = link
-        link.home = self._home
+        link.home = self._tools
         link.opening = True
         link.last_activity = time.monotonic()
         try:
             link.generation += 1
             generation = link.generation
-            functions = self._home.function_tools() if self._home is not None else []
-            use_backend = self._settings.enable_web_search or bool(functions)
+            functions = self._tools.function_tools() if self._tools is not None else []
+            home_count = self._tools.count("Home Assistant") if self._tools is not None else 0
+            music_count = self._tools.count("Music Assistant") if self._tools is not None else 0
+            use_backend = (
+                self._settings.enable_web_search or bool(functions)
+            )
             link.session = LiveSession(
                 voice=self._settings.voice,
                 instructions=build_instructions(
-                    self._settings, home_tools=bool(functions)
+                    self._settings,
+                    home_tools=home_count > 0,
+                    music_tools=music_count > 0,
                 ),
                 web_search_model=self._settings.backend_model if use_backend else "",
                 include_web_search=self._settings.enable_web_search,
@@ -511,14 +517,19 @@ class DeviceConnection:
             link.last_activity = time.monotonic()
             await _send_json(link, phase_message("listening"))
             logger.info(
-                "Live session opened (backend %s, web search %s, Home Assistant tools %s)",
+                "Live session opened (backend %s, web search %s, Home Assistant tools %s, Music Assistant tools %s)",
                 self._settings.backend_model if use_backend else "off",
                 "on" if self._settings.enable_web_search else "off",
-                len(functions),
+                home_count,
+                music_count,
             )
-            if self._settings.enable_home_assistant and not functions:
+            if self._settings.enable_home_assistant and home_count == 0:
                 logger.warning(
                     "Home Assistant tools are not attached to this Live session"
+                )
+            if self._settings.enable_music_assistant and music_count == 0:
+                logger.warning(
+                    "Music Assistant tools are not attached to this Live session"
                 )
         except Exception:
             logger.exception("Could not open Live session")
@@ -594,28 +605,27 @@ class DeviceConnection:
         asyncio.create_task(_expire_parked(ip, link))
 
 
-async def serve(
-    settings: Settings, home: HomeAssistantClient | None = None
-) -> None:
+async def serve(settings: Settings, tools: ToolRouter | None = None) -> None:
     asyncio.get_running_loop().set_exception_handler(_ignore_dead_windows_socket)
 
     async def handler(socket) -> None:
         peer = getattr(socket, "remote_address", None)
         logger.info("Device socket open: %s", peer)
         try:
-            await DeviceConnection(socket, settings, home).run()
+            await DeviceConnection(socket, settings, tools).run()
         finally:
             logger.info("Device socket closed: %s", peer)
 
     async with websockets.serve(handler, settings.host, settings.port, max_size=8_000_000):
         logger.info(
-            "Live Voice Gateway listening on %s:%s (voice %s, backend %s, web search %s, Home Assistant %s)",
+            "Live Voice Gateway listening on %s:%s (voice %s, backend %s, web search %s, Home Assistant %s, Music Assistant %s)",
             settings.host,
             settings.port,
             settings.voice,
             settings.backend_model,
             "on" if settings.enable_web_search else "off",
             "on" if settings.enable_home_assistant else "off",
+            "on" if settings.enable_music_assistant else "off",
         )
         try:
             await asyncio.Future()

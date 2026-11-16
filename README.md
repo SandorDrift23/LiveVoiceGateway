@@ -40,9 +40,9 @@ internal speaker.
    `ws://<home-assistant-ip>:8080/`.
 
 The configuration page is grouped into **Instructions**, **Basic settings**,
-**Backend and web search**, and **Home Assistant and device**. Each group is
-its own section. Instruction fields remain single-line; use
-**Configuration → ⋮ → Edit in YAML** for long text.
+**Backend and web search**, **Home Assistant and device**, and **Music
+Assistant**. Each group is its own section. Instruction fields remain
+single-line; use **Configuration → ⋮ → Edit in YAML** for long text.
 
 Leave the custom MCP URL and access token empty when running as a Home
 Assistant add-on. It automatically uses the Supervisor token. The default
@@ -50,6 +50,12 @@ Assistant add-on. It automatically uses the Supervisor token. The default
 `http://supervisor/core/api/mcp/assist`; **All configured APIs** uses
 `http://supervisor/core/api/mcp`. The MCP Server integration must be enabled,
 with Home Assistant control and the intended entities exposed.
+
+Music playback uses the Music Assistant FastMCP Server plugin, not the Home
+Assistant MCP endpoint. Enable **Music Assistant control**, set the token from
+the plugin's connect wizard, and optionally set **Default media player** to a
+player name. An empty URL uses `http://127.0.0.1:8095/mcp/v1`. In the plugin,
+enable playback control for that token and leave destructive confirmation off.
 
 See the add-on [documentation](live_voice_gateway/DOCS.md) for configuration
 details.

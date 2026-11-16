@@ -57,7 +57,9 @@ configuration:
           friendly, calm, and natural, with clear pronunciation.
       home_location:
         name: Home location
-        description: City or general location used for local questions such as weather.
+        description: >-
+          City or general location used for weather and nearby places. The
+          assistant must not use it as a Home Assistant room or device name.
       timezone:
         name: Timezone
         description: >-
@@ -153,3 +155,36 @@ configuration:
       log_tool_calls:
         name: Log tool calls
         description: Writes Home Assistant and web-search tool activity to the log. Default is enabled.
+  music_assistant:
+    name: Music Assistant
+    description: >-
+      Music Assistant MCP playback. Leave this off until the FastMCP Server
+      plugin is enabled and a Music Assistant token is set.
+    fields:
+      enable_music_assistant:
+        name: Music Assistant control
+        description: >-
+          Exposes Music Assistant MCP tools to the voice session. Default is off.
+          Turn on Control permissions for this token in the Music Assistant
+          plugin, and leave destructive confirmation off.
+      ma_mcp_url:
+        name: Music Assistant MCP URL
+        description: >-
+          Leave empty in this add-on to use http://127.0.0.1:8095/mcp/v1. Set
+          the complete URL, without a trailing slash, when Music Assistant
+          listens somewhere else.
+      ma_access_token:
+        name: Music Assistant access token
+        description: >-
+          Long-lived token from the Music Assistant MCP connect wizard. The
+          Home Assistant supervisor token is not accepted here.
+      default_media_player:
+        name: Default media player
+        description: >-
+          Optional Music Assistant player name, such as Wohnzimmer. Used when
+          a request names no player. Leave empty to ask which player.
+      ma_tool_allowlist:
+        name: Music Assistant tool allow-list
+        description: >-
+          Comma-separated Music Assistant tool names. Leave empty to allow
+          every advertised playback tool.
