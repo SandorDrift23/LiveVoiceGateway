@@ -1,5 +1,5 @@
 name: Live Voice Gateway
-version: "0.2.3"
+version: "0.2.4"
 slug: live_voice_gateway
 description: Full-duplex GPT-Live voice gateway for Home Assistant Voice PE
 url: https://github.com/SandorDrift23/LiveVoiceGateway

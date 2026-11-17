@@ -164,7 +164,7 @@ def _initialize_body() -> str:
             "params": {
                 "protocolVersion": "2025-03-26",
                 "capabilities": {},
-                "clientInfo": {"name": "live-voice-gateway", "version": "0.2.3"},
+                "clientInfo": {"name": "live-voice-gateway", "version": "0.2.4"},
             },
         }
     )
