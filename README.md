@@ -54,7 +54,8 @@ with Home Assistant control and the intended entities exposed.
 Music playback uses the Music Assistant FastMCP Server plugin, not the Home
 Assistant MCP endpoint. Enable **Music Assistant control**, set the token from
 the plugin's connect wizard, and optionally set **Default media player** to a
-player name. An empty URL uses `http://127.0.0.1:8095/mcp/v1`. In the plugin,
+player name. **Radio mix** stays off, so a named station such as Ego FM
+plays that station. An empty URL uses `http://127.0.0.1:8095/mcp/v1`. In the plugin,
 enable playback control for that token and leave destructive confirmation off.
 
 See the add-on [documentation](live_voice_gateway/DOCS.md) for configuration

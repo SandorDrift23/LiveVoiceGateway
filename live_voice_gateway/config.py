@@ -99,6 +99,7 @@ class Settings:
     ma_access_token: str = ""
     default_media_player: str = ""
     ma_tool_allowlist: tuple[str, ...] = ()
+    enable_radio_mix: bool = False
     log_transcripts: bool = True
     log_tool_calls: bool = True
 
@@ -167,6 +168,7 @@ class Settings:
             ma_access_token=_text("MA_ACCESS_TOKEN"),
             default_media_player=_text("DEFAULT_MEDIA_PLAYER"),
             ma_tool_allowlist=_csv("MA_TOOL_ALLOWLIST"),
+            enable_radio_mix=_bool("ENABLE_RADIO_MIX", False),
             log_transcripts=_bool("LOG_TRANSCRIPTS", True),
             log_tool_calls=_bool("LOG_TOOL_CALLS", True),
         )
@@ -217,13 +219,17 @@ def build_instructions(
             lines.append(
                 "Hand a music or playback request to the backend immediately. "
                 f"The default player is {player}. Do not ask which player "
-                "unless the result lists several matches."
+                "unless the result lists several matches. A station name is a "
+                "playback request. Hand that name to the backend. Do not ask "
+                "the user to say the word radio first."
             )
         elif music_tools:
             lines.append(
                 "Hand a music or playback request to the backend immediately. "
                 "No default player is configured. If the user names no player, "
-                "ask which one."
+                "ask which one. A station name is a playback request. Hand "
+                "that name to the backend. Do not ask the user to say the "
+                "word radio first."
             )
         else:
             lines.append(
@@ -255,14 +261,34 @@ def backend_prompt(settings: Settings) -> str:
     if settings.enable_music_assistant:
         player = settings.default_media_player or "none"
         lines.append(
-            "For music, radio, a playlist, an artist, pause, next, previous, "
-            "stop, or volume, call one Music Assistant function in the same "
-            "step. Do not use a Home Assistant turn-on tool or web search. "
+            "For pause, next, previous, stop, volume, or a track, album, "
+            "artist, or playlist, call one Music Assistant function in the "
+            "same step. Do not use a Home Assistant turn-on tool or web "
+            "search. "
             f"Leave player fields empty to use the default player ({player}). "
             "If the user names a player or room, pass that name unchanged and "
             "do not substitute the default. Do not translate titles, artists, "
-            "or playlists. Return a short confirmation without ids or JSON."
+            "or playlists. Return a short confirmation without ids or JSON. "
+            "A named station such as Ego FM or egoPURE is a radio station, "
+            "not a song. Resolve it with metadata_recommendation_items using "
+            "provider recommendations and item_id favorite_radio. Match the "
+            "spoken name while ignoring spaces and case, then play that uri "
+            "with playback_play_media. Never invent a spotify or apple music "
+            "uri for a station."
         )
+        if settings.enable_radio_mix:
+            lines.append(
+                "Set radio or radio_mode to true only when the user asks for "
+                "similar songs or a mix from a track, album, or artist. For a "
+                "radio station, always set radio and radio_mode to false."
+            )
+        else:
+            lines.append(
+                "Radio mix is disabled. Set radio and radio_mode to false on "
+                "every playback call. Do not play a radio_playlist uri. If "
+                "the user asks for similar songs or a mix, say that radio mix "
+                "is turned off and play the named item itself."
+            )
     return " ".join(lines)
 
 

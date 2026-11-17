@@ -42,6 +42,7 @@ def main() -> None:
                 settings.tool_timeout_seconds,
                 settings.ma_tool_allowlist,
                 settings.default_media_player,
+                allow_radio_mix=settings.enable_radio_mix,
             )
             music.connect()
             clients.append(music)

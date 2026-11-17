@@ -14,6 +14,9 @@ import urllib.request
 logger = logging.getLogger(__name__)
 
 _PLAYER_FIELDS = ("player_id", "player", "queue_id", "target_player")
+_RADIO_FLAGS = ("radio", "radio_mode")
+_RADIO_URI_KEYS = ("uri", "media", "media_id", "media_uri")
+_STATION_SCHEMES = {"radiobrowser", "tunein", "siriusxm"}
 
 
 class HomeAssistantClient:
@@ -161,7 +164,7 @@ def _initialize_body() -> str:
             "params": {
                 "protocolVersion": "2025-03-26",
                 "capabilities": {},
-                "clientInfo": {"name": "live-voice-gateway", "version": "0.2.1"},
+                "clientInfo": {"name": "live-voice-gateway", "version": "0.2.3"},
             },
         }
     )
@@ -264,6 +267,10 @@ def _log_body(label: str, body: str) -> None:
     logger.info("MCP %s response: %s", label, compact or "<empty>")
 
 
+class RadioMixDisabled(Exception):
+    """Raised when a call asks for a similar-tracks mix while that is off."""
+
+
 class MusicAssistantClient(HomeAssistantClient):
     """Music Assistant MCP client that fills an optional default player."""
 
@@ -274,9 +281,11 @@ class MusicAssistantClient(HomeAssistantClient):
         timeout: float,
         allowlist: tuple[str, ...] = (),
         default_player: str = "",
+        allow_radio_mix: bool = False,
     ):
         super().__init__(url, token, timeout, allowlist, label="Music Assistant")
         self.default_player = default_player.strip()
+        self.allow_radio_mix = allow_radio_mix
         self._players: dict[str, str] = {}
         self._resolved_default = self.default_player
 
@@ -284,19 +293,50 @@ class MusicAssistantClient(HomeAssistantClient):
         if self.default_player:
             self._load_players_locked()
 
+    def _call_locked(self, name: str, arguments: str) -> tuple[int, str]:
+        try:
+            return super()._call_locked(name, arguments)
+        except RadioMixDisabled:
+            logger.info("Music Assistant radio mix blocked on %s", name)
+            return 200, (
+                "Radio mix is disabled. Play the station or item itself "
+                "with radio set to false."
+            )
+
     def _prepare_payload(self, name: str, payload: dict) -> dict:
         prepared = dict(payload)
-        if _targets_player(name, self._schema_properties(name)):
-            return self._fill_player(prepared, self._schema_properties(name))
+        schema = self._schema_properties(name)
+        if _targets_player(name, schema):
+            return self._apply_radio_policy(name, self._fill_player(prepared, schema))
         if name != "call_tool":
-            return prepared
+            return self._apply_radio_policy(name, prepared)
         command = str(prepared.get("name") or prepared.get("command") or "")
         for key in ("arguments", "args"):
             inner = _object(prepared.get(key))
-            if inner is None or not _targets_player(command, {}):
+            if inner is None:
                 continue
-            prepared[key] = self._fill_player(inner, {})
+            if _targets_player(command, {}):
+                inner = self._fill_player(inner, {})
+            prepared[key] = self._apply_radio_policy(command, inner)
         return prepared
+
+    def _apply_radio_policy(self, name: str, payload: dict) -> dict:
+        if not _accepts_radio_flag(name):
+            return payload
+        adjusted = dict(payload)
+        if not self.allow_radio_mix and _is_mix_uri(adjusted):
+            raise RadioMixDisabled()
+        if self.allow_radio_mix and not _is_station_target(adjusted):
+            return adjusted
+        changed = False
+        for key in _RADIO_FLAGS:
+            if adjusted.get(key) is True:
+                adjusted[key] = False
+                changed = True
+        if changed:
+            reason = "disabled" if not self.allow_radio_mix else "station"
+            logger.info("Music Assistant radio mix cleared (%s) on %s", reason, name)
+        return adjusted
 
     def _fill_player(self, payload: dict, schema: dict) -> dict:
         filled = dict(payload)
@@ -385,6 +425,41 @@ class ToolRouter:
             return f"Tool {name} is not available."
         client, original = route
         return client.call_tool(original, arguments)
+
+
+def _accepts_radio_flag(name: str) -> bool:
+    lowered = name.lower()
+    return "play_media" in lowered or "playback" in lowered
+
+
+def _radio_uris(payload: dict) -> list[str]:
+    found = []
+    for key in _RADIO_URI_KEYS:
+        value = payload.get(key)
+        if isinstance(value, str):
+            found.append(value)
+        elif isinstance(value, list):
+            found.extend(item for item in value if isinstance(item, str))
+    return found
+
+
+def _is_station_target(payload: dict) -> bool:
+    if str(payload.get("media_type") or "").strip().casefold() == "radio":
+        return True
+    for value in _radio_uris(payload):
+        text = value.strip().casefold()
+        if "://radio/" in text or text.startswith("radio://"):
+            return True
+        scheme = text.split("://", 1)[0]
+        if scheme in _STATION_SCHEMES:
+            return True
+    return False
+
+
+def _is_mix_uri(payload: dict) -> bool:
+    return any(
+        value.strip().casefold().startswith("radio_playlist://") for value in _radio_uris(payload)
+    )
 
 
 def _targets_player(name: str, schema: dict) -> bool:

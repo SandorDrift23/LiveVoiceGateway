@@ -167,6 +167,13 @@ configuration:
           Exposes Music Assistant MCP tools to the voice session. Default is off.
           Turn on Control permissions for this token in the Music Assistant
           plugin, and leave destructive confirmation off.
+      enable_radio_mix:
+        name: Radio mix
+        description: >-
+          Off by default. A named station such as Ego FM plays that station.
+          Similar-tracks mixes stay off, including when a request says radio.
+          Turn on only to allow a mix from a track, album, or artist. A real
+          radio station is still played as itself.
       ma_mcp_url:
         name: Music Assistant MCP URL
         description: >-

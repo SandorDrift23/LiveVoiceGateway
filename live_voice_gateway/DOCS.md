@@ -52,7 +52,9 @@ create a token in its connect wizard, and turn on playback control for that
 token. Leave destructive confirmation off, because this gateway cannot answer
 a confirmation prompt. Enable **Music Assistant control** and paste the token.
 **Default media player** is optional; set a player name such as `Wohnzimmer`
-when requests that name no player should use one. Leave **Music Assistant MCP
+when requests that name no player should use one. Leave **Radio mix** off.
+A request such as Ego FM then plays that station, and a similar-tracks mix
+stays disabled. Leave **Music Assistant MCP**
 URL** empty to use `http://127.0.0.1:8095/mcp/v1`.
 
 Changing the voice takes effect when a new GPT-Live conversation starts.

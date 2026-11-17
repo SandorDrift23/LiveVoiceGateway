@@ -15,6 +15,7 @@ from live_voice_gateway.config import (
 from live_voice_gateway.mcp_debug import (
     HomeAssistantClient,
     MusicAssistantClient,
+    RadioMixDisabled,
     ToolRouter,
     _player_index,
     _result_text,
@@ -324,6 +325,57 @@ class McpDebugTests(unittest.TestCase):
         )
         self.assertEqual(payload["arguments"]["player_id"], "id-wohnzimmer")
 
+    def test_radio_mix_stays_off_for_a_station_and_a_track(self):
+        client = MusicAssistantClient("http://ma/mcp/v1", "token", 5)
+        station = client._prepare_payload(
+            "playback_play_media",
+            {"queue_id": "speaker", "uri": "library://radio/3", "radio": True},
+        )
+        self.assertFalse(station["radio"])
+        self.assertEqual(station["uri"], "library://radio/3")
+        track = client._prepare_payload(
+            "playback_play_media",
+            {"queue_id": "speaker", "uri": "library://track/9", "radio_mode": True},
+        )
+        self.assertFalse(track["radio_mode"])
+        self.assertEqual(track["uri"], "library://track/9")
+        untouched = client._prepare_payload(
+            "playback_play", {"player_id": "speaker", "query": "jazz"}
+        )
+        self.assertEqual(untouched["query"], "jazz")
+        self.assertNotIn("radio", untouched)
+
+    def test_enabled_radio_mix_still_plays_a_station_as_itself(self):
+        client = MusicAssistantClient(
+            "http://ma/mcp/v1", "token", 5, allow_radio_mix=True
+        )
+        station = client._prepare_payload(
+            "playback_play_media",
+            {"queue_id": "speaker", "uri": "library://radio/1", "radio": True},
+        )
+        self.assertFalse(station["radio"])
+        mix = client._prepare_payload(
+            "playback_play_media",
+            {"queue_id": "speaker", "uri": "library://track/9", "radio": True},
+        )
+        self.assertTrue(mix["radio"])
+
+    def test_disabled_radio_mix_rejects_a_mix_playlist(self):
+        client = MusicAssistantClient("http://ma/mcp/v1", "token", 5)
+        with self.assertRaises(RadioMixDisabled):
+            client._prepare_payload(
+                "playback_play_media",
+                {"uri": "radio_playlist://playlist/library://track/9"},
+            )
+
+        def blocked(self, name, arguments):
+            raise RadioMixDisabled()
+
+        with patch.object(HomeAssistantClient, "_call_locked", blocked):
+            status, output = client._call_locked("playback_play_media", "{}")
+        self.assertEqual(status, 200)
+        self.assertIn("Radio mix is disabled", output)
+
     def test_player_list_maps_names_to_ids(self):
         found = _player_index(
             '[{"name":"Wohnzimmer","player_id":"id-wohnzimmer"},'
@@ -447,9 +499,20 @@ class InstructionTests(unittest.TestCase):
         self.assertEqual(settings.ma_access_token, "music-token")
         self.assertEqual(settings.ha_access_token, "supervisor-test-token")
         self.assertEqual(settings.default_media_player, "Wohnzimmer")
-        self.assertIn("default player (Wohnzimmer)", backend_prompt(settings))
+        self.assertFalse(settings.enable_radio_mix)
+        prompt = backend_prompt(settings)
+        self.assertIn("default player (Wohnzimmer)", prompt)
+        self.assertIn("favorite_radio", prompt)
+        self.assertIn("Radio mix is disabled", prompt)
+        self.assertIn("call one Music Assistant function", prompt)
         voice = build_instructions(settings, music_tools=True)
         self.assertIn("The default player is Wohnzimmer", voice)
+        self.assertIn("Do not ask the user to say the word radio first", voice)
+        mixed = backend_prompt(
+            Settings(openai_api_key="test", enable_music_assistant=True, enable_radio_mix=True)
+        )
+        self.assertIn("similar songs", mixed)
+        self.assertNotIn("Radio mix is disabled", mixed)
 
     def test_disabled_web_search_tells_the_backend_not_to_search(self):
         settings = Settings(openai_api_key="test", enable_web_search=False)
